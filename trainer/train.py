@@ -14,6 +14,37 @@ import cv2
 import mediapipe as mp
 
 mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
+mp_styles = mp.solutions.drawing_styles
+
+# Konfigurasi
+MAX_HANDS = 2
+PER_HAND = 21 * 3          # x, y, z per titik
+FEAT_DIM = PER_HAND * MAX_HANDS  # 126
+
+def landmarks_to_array(multi_hand_landmarks):
+    """
+    Konversi hasil deteksi tangan menjadi array 1D (126,).
+    - Tidak ada tangan -> semua nol.
+    - 1 tangan -> 63 pertama terisi, sisanya nol.
+    - 2 tangan -> diurutkan berdasarkan wrist.x, digabung.
+    """
+    arr = np.zeros(FEAT_DIM, dtype=np.float32)
+    if multi_hand_landmarks is None:
+        return arr
+
+    hands = list(multi_hand_landmarks)
+    # Urutkan tangan dari kiri ke kanan (wrist.x)
+    hands.sort(key=lambda h: h.landmark[0].x)
+
+    for i, hand in enumerate(hands[:MAX_HANDS]):
+        pts = []
+        for lm in hand.landmark:
+            pts.extend([lm.x, lm.y, lm.z])
+        start = i * PER_HAND
+        arr[start:start + PER_HAND] = np.array(pts, dtype=np.float32)
+    return arr
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -37,8 +68,12 @@ def main():
         print("Error: Tidak bisa membuka kamera.")
         sys.exit(1)
 
-    hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2,
-                           min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    hands = mp_hands.Hands(
+        static_image_mode=False,
+        max_num_hands=2,
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
 
     recorded = 0
     state = "waiting"   # waiting / countdown / recording
@@ -54,17 +89,33 @@ def main():
         frame = cv2.flip(frame, 1)
         display = frame.copy()
 
+        # Deteksi tangan setiap frame untuk feedback visual
+        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(img_rgb)
+        hand_detected = results.multi_hand_landmarks is not None
+
+        # Gambar landmark jika tangan terdeteksi
+        if hand_detected:
+            for hand_lm in results.multi_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    display,
+                    hand_lm,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_styles.get_default_hand_landmarks_style(),
+                    mp_styles.get_default_hand_connections_style()
+                )
+
         # Info tampilan
         cv2.putText(display, f"Label: {label}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
         cv2.putText(display, f"Recorded: {recorded}/{target}", (10, 65),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         key = cv2.waitKey(1) & 0xFF
 
         if state == "waiting":
             cv2.putText(display, "Tekan 'R' untuk rekam", (10, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             if key == ord('r'):
                 state = "countdown"
                 state_start = time.time()
@@ -81,49 +132,34 @@ def main():
                 print("  GO! Rekam selama 2 detik...")
             else:
                 cv2.putText(display, f"Countdown: {remaining}", (10, 100),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
         elif state == "recording":
             elapsed = time.time() - state_start
-            # Ambil frame dengan MediaPipe
-            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = hands.process(img_rgb)
-            if results.multi_hand_landmarks:
-                # Simpan landmark mentah (21 titik * 3 koordinat) per tangan
-                # Untuk satu frame: list of hands, masing-masing 21 * 3
-                frame_landmarks = []
-                for hand_lm in results.multi_hand_landmarks:
-                    pts = []
-                    for lm in hand_lm.landmark:
-                        pts.extend([lm.x, lm.y, lm.z])
-                    frame_landmarks.append(pts)
-                frames_buffer.append(frame_landmarks)
-                for hand_lm in results.multi_hand_landmarks:
-                    mp.solutions.drawing_utils.draw_landmarks(
-                        display, hand_lm, mp_hands.HAND_CONNECTIONS)
-            else:
-                # Jika tidak terdeteksi, isi dengan list kosong
-                frames_buffer.append([])
+            # Ambil data landmark (selalu array 126, homogen)
+            landmark_array = landmarks_to_array(results.multi_hand_landmarks)
+            frames_buffer.append(landmark_array)
 
             cv2.putText(display, f"Merekam... {elapsed:.1f}s / {record_duration}s",
-                        (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                        (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
             if elapsed >= record_duration:
-                # Simpan sequence
                 # Resample jadi SEQ_LEN frame (30)
                 seq_len = 30
                 if len(frames_buffer) > 0:
-                    # Ambil index merata
-                    indices = np.linspace(0, len(frames_buffer)-1, seq_len, dtype=int)
-                    sampled = [frames_buffer[i] for i in indices]
+                    all_frames = np.array(frames_buffer)          # (n_frames, 126)
+                    indices = np.linspace(0, all_frames.shape[0] - 1, seq_len, dtype=int)
+                    sampled = all_frames[indices]                 # (30, 126)
                 else:
-                    sampled = [[] for _ in range(seq_len)]
+                    sampled = np.zeros((seq_len, FEAT_DIM), dtype=np.float32)
+
                 # Simpan ke .npz
                 fname = f"data/{label}_{recorded+1}_{int(time.time())}.npz"
                 np.savez_compressed(fname, sequence=sampled, label=label)
                 recorded += 1
                 print(f"  Tersimpan: {fname} ({recorded}/{target})")
                 state = "waiting"
+
                 if recorded >= target:
                     print(f"=== Selesai. {recorded} sampel tersimpan ===")
                     break
