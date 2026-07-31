@@ -1,0 +1,41 @@
+# ===================
+# Python / Trainer
+# ===================
+trainer/venv/
+trainer/data/
+trainer/__pycache__/
+trainer/*.h5
+trainer/*.tflite
+trainer/*.npz
+trainer/*.keras
+*.pyc
+*.pyo
+*.egg-info/
+
+# ===================
+# Web
+# ===================
+web/node_modules/
+web/.vercel
+
+# ===================
+# IDE & Editor
+# ===================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===================
+# OS & File System
+# ===================
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# ===================
+# Misc
+# ===================
+*.log
+*.tmp
+.env
