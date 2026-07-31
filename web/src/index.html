@@ -1,27 +1,36 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GestureFlow</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div id="app">
-    <h1>GestureFlow</h1>
-    <div id="camera-container">
-      <video id="video" autoplay playsinline></video>
-      <canvas id="overlay"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GestureFlow</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <h1>GestureFlow</h1>
+      <div id="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <button id="btn-start">Mulai Deteksi</button>
+      <button id="btn-stop" disabled>Berhenti</button>
+      <div id="status">Siap</div>
+      <div id="result">
+        <span id="label">-</span>
+        <span id="confidence">-</span>
+      </div>
     </div>
-    <button id="btn-start">Mulai Deteksi</button>
-    <button id="btn-stop" disabled>Berhenti</button>
-    <div id="status">Siap</div>
-    <div id="result">
-      <span id="label">-</span>
-      <span id="confidence">-</span>
-    </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script type="module" src="js/camera.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script type="module" src="js/camera.js"></script>
+    <!-- Load MediaPipe Hands (CDN) -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <!-- Main module -->
+    <script type="module" src="js/main.js"></script>
+  </body>
 </html>
