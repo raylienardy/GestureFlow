@@ -1,82 +1,303 @@
+/* ========================
+   GestureFlow – Ringan & Cepat
+   ======================== */
+:root {
+  --blue: #4285f4;
+  --red: #ea4335;
+  --yellow: #fbbc05;
+  --green: #34a853;
+  --pink: #ff4081;
+  --bg: #f8f9ff;
+  --card-bg: #ffffff;
+  --text: #1f1f1f;
+  --text-secondary: #5f6368;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --radius: 2rem;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 body {
-  font-family: "Segoe UI", sans-serif;
-  background: #f8f9fa;
+  font-family: "Nunito", sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  padding: 1.2rem;
 }
-#app {
-  text-align: center;
-  width: 100%;
+
+.app-container {
   max-width: 720px;
-  padding: 20px;
+  width: 100%;
+  margin: 0 auto;
 }
-h1 {
-  color: #ea4335;
-  margin-bottom: 20px;
+
+/* Header */
+.app-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
-#camera-container {
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.logo-icon {
+  font-size: 2.4rem;
+}
+
+.logo h1 {
+  font-family: "Fredoka One", cursive;
+  font-size: 2.4rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.logo h1 span {
+  color: var(--blue);
+}
+
+.tagline {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  font-weight: 600;
+}
+
+/* Camera Card */
+.camera-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.camera-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.camera-view {
   position: relative;
   width: 100%;
-  aspect-ratio: 4/3;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 4 / 3;
+  background: #000;
 }
-#video,
-#overlay {
+
+#video {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-#overlay {
-  z-index: 10;
-}
-button {
-  background: #4285f4;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-size: 16px;
-  margin: 10px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-button:disabled {
-  background: #ccc;
-}
-#status {
-  margin: 15px 0;
-  font-size: 18px;
-  color: #5f6368;
-}
-#result span {
-  display: inline-block;
-  margin: 0 10px;
-  font-size: 20px;
-}
-#label {
-  color: #ea4335;
-  font-weight: bold;
-}
-#confidence {
-  color: #34a853;
-}
-
-canvas {
-  transition: opacity 0.3s;
-}
-
-#video {
   transform: scaleX(-1);
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.camera-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px 14px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  z-index: 20;
+}
+
+/* Status Badge */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  background: #f1f3f4;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+  transition: background 0.2s;
+}
+
+.status-badge.active .status-dot {
+  background: var(--red);
+}
+
+.status-badge span {
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Result Panel */
+.result-panel {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem 1.2rem;
+  text-align: center;
+}
+
+.gesture-display {
+  margin-bottom: 1rem;
+}
+
+.gesture-label {
+  font-family: "Fredoka One", cursive;
+  font-size: 2.6rem;
+  color: var(--text);
+  display: block;
+  transition: color 0.2s;
+}
+
+.gesture-label.detected {
+  color: var(--pink);
+  animation: pop 0.3s ease-out;
+}
+
+.gesture-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.confidence-area {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+}
+
+.confidence-bar-container {
+  flex: 1;
+  height: 10px;
+  background: #e8eaed;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.confidence-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--yellow), var(--green));
+  border-radius: 100px;
+  transition: width 0.2s;
+}
+
+.confidence-text {
+  font-weight: 800;
+  color: var(--green);
+  min-width: 42px;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.instruction-text {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 0.6rem;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.8rem 1.8rem;
+  border-radius: 100px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #3367d6;
+}
+
+.btn-outline {
+  background: white;
+  color: var(--text-secondary);
+  border: 2px solid #dadce0;
+}
+
+.btn-outline:hover {
+  border-color: var(--text-secondary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Animations (ringan) */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .logo h1 {
+    font-size: 2rem;
+  }
+  .gesture-label {
+    font-size: 2rem;
+  }
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
 }

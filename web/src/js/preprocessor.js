@@ -19,11 +19,11 @@ export function landmarksToFeature(multiHandLandmarks) {
     const arr = [];
 
     for (let i = 0; i < 21; i++) {
-      // Mirror horizontal: x = 1 - x (karena model dilatih dengan gambar mirror)
-      const mx = 1 - hand[i].x;
-      const my = hand[i].y;
-      const mz = hand[i].z;
-      arr.push(mx, my, mz);
+      // LANGSUNG gunakan nilai asli (kamera sudah mirror via CSS)
+      const x = hand[i].x;
+      const y = hand[i].y;
+      const z = hand[i].z;
+      arr.push(x, y, z);
     }
 
     // Translasi: kurangi wrist

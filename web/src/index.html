@@ -2,35 +2,83 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GestureFlow</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>GestureFlow – Isyarat Tanpa Batas</title>
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <div id="app">
-      <h1>GestureFlow</h1>
-      <div id="camera-container">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="overlay"></canvas>
-      </div>
-      <button id="btn-start">Mulai Deteksi</button>
-      <button id="btn-stop" disabled>Berhenti</button>
-      <div id="status">Siap</div>
-      <div id="result">
-        <span id="label">-</span>
-        <span id="confidence">-</span>
-      </div>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="logo">
+          <span class="logo-icon">✋</span>
+          <h1>Gesture<span>Flow</span></h1>
+        </div>
+        <p class="tagline">Bahasa isyarat, mengalir tanpa kata</p>
+      </header>
+
+      <!-- Main Camera Area -->
+      <main class="camera-section">
+        <div class="camera-card">
+          <div class="camera-view">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="camera-hint" id="camera-hint">
+              <span>👆 Double‑click untuk sembunyikan overlay</span>
+            </div>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="status-badge" id="status-badge">
+            <div class="status-dot"></div>
+            <span id="status">Siap mendeteksi</span>
+          </div>
+        </div>
+
+        <!-- Detection Result Panel -->
+        <div class="result-panel" id="result-panel">
+          <div class="gesture-display">
+            <span class="gesture-label" id="label">-</span>
+            <span class="gesture-sub">gerakan terdeteksi</span>
+          </div>
+          <div class="confidence-area">
+            <div class="confidence-bar-container">
+              <div class="confidence-bar" id="confidence-bar"></div>
+            </div>
+            <span class="confidence-text" id="confidence">0%</span>
+          </div>
+          <div class="instruction-text" id="instruction">
+            Lakukan gerakan dengan mantap
+          </div>
+        </div>
+      </main>
+
+      <!-- Controls -->
+      <footer class="controls">
+        <button id="btn-start" class="btn btn-primary">
+          <span class="btn-icon">▶</span> Mulai Deteksi
+        </button>
+        <button id="btn-stop" class="btn btn-outline" disabled>
+          <span class="btn-icon">⏹</span> Berhenti
+        </button>
+      </footer>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script type="module" src="js/camera.js"></script>
-    <!-- Load MediaPipe Hands (CDN) -->
+
+    <!-- Scripts -->
     <script
       src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
       crossorigin="anonymous"
     ></script>
-    <!-- Load TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-    <!-- Main module -->
     <script type="module" src="js/main.js"></script>
   </body>
 </html>
