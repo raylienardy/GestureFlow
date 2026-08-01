@@ -76,3 +76,7 @@ button:disabled {
 canvas {
   transition: opacity 0.3s;
 }
+
+#video {
+  transform: scaleX(-1);
+}

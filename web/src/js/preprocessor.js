@@ -1,11 +1,6 @@
-/**
- * preprocessor.js
- * Meniru preprocessing Python: hands_to_feature().
- */
-
-const PER_HAND = 63; // 21 titik * (x,y,z)
+const PER_HAND = 63;
 const MAX_HANDS = 2;
-const FEAT_DIM = PER_HAND * MAX_HANDS; // 126
+const FEAT_DIM = PER_HAND * MAX_HANDS;
 
 export function landmarksToFeature(multiHandLandmarks) {
   const feature = new Array(FEAT_DIM).fill(0);
@@ -23,12 +18,15 @@ export function landmarksToFeature(multiHandLandmarks) {
     const hand = hands[h];
     const arr = [];
 
-    // 1. Konversi ke array [x0,y0,z0, x1,y1,z1, ...]
     for (let i = 0; i < 21; i++) {
-      arr.push(hand[i].x, hand[i].y, hand[i].z);
+      // Mirror horizontal: x = 1 - x (karena model dilatih dengan gambar mirror)
+      const mx = 1 - hand[i].x;
+      const my = hand[i].y;
+      const mz = hand[i].z;
+      arr.push(mx, my, mz);
     }
 
-    // 2. Translasi: kurangi wrist (landmark 0)
+    // Translasi: kurangi wrist
     const wristX = arr[0];
     const wristY = arr[1];
     const wristZ = arr[2];
@@ -38,7 +36,7 @@ export function landmarksToFeature(multiHandLandmarks) {
       arr[i + 2] -= wristZ;
     }
 
-    // 3. Hitung skala: max Euclidean distance
+    // Skala
     let maxDist = 0;
     for (let i = 0; i < 21; i++) {
       const dx = arr[i * 3];
@@ -47,20 +45,16 @@ export function landmarksToFeature(multiHandLandmarks) {
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (dist > maxDist) maxDist = dist;
     }
-
-    // 4. Normalisasi skala
     if (maxDist > 0) {
       for (let i = 0; i < 63; i++) {
         arr[i] /= maxDist;
       }
     }
 
-    // 5. Masukkan ke feature
     const offset = h * PER_HAND;
     for (let i = 0; i < 63; i++) {
       feature[offset + i] = arr[i];
     }
   }
-
   return feature;
 }

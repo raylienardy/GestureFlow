@@ -12,10 +12,7 @@ export class GestureClassifier {
     this.buffer = [];
   }
 
-  async init(
-    modelPath = "public/model/model.json",
-    labelsPath = "public/model/labels.json",
-  ) {
+  async init(modelPath = "model/model.json", labelsPath = "model/labels.json") {
     // Load labels
     const resp = await fetch(labelsPath);
     const labelObj = await resp.json(); // {"0":"halo","1":"salam"}

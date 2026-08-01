@@ -39,3 +39,9 @@ Desktop.ini
 *.log
 *.tmp
 .env
+
+
+# ===================
+# convert
+# ===================
+converter/venv/
