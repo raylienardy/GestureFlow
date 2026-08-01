@@ -2,15 +2,14 @@
 """
 Melatih model LSTM dari data .npz hasil rekaman trainer.
 Usage:
-  python train_model.py              # pakai default data/ dan output/
-  python train_model.py --data_dir data --out_model model.h5
+  python train_model.py
+  python train_model.py --data_dir data --out_model model.h5 --epochs 50
 """
 
 import os
 import argparse
 import json
 import numpy as np
-from collections import Counter
 
 import tensorflow as tf
 from tensorflow.keras import layers, models
@@ -73,7 +72,6 @@ def main():
     parser.add_argument('--data_dir', default='data')
     parser.add_argument('--out_model', default='model.h5')
     parser.add_argument('--out_labels', default='labels.json')
-    parser.add_argument('--tfjs_dir', default='../web/public/model')
     parser.add_argument('--epochs', type=int, default=40)
     parser.add_argument('--batch', type=int, default=8)
     parser.add_argument('--test_size', type=float, default=0.2)
@@ -128,18 +126,14 @@ def main():
     model.save(args.out_model)
     print(f"Model disimpan ke {args.out_model}")
 
-    # 7. Konversi ke TensorFlow.js
-    print("Mengonversi ke TensorFlow.js...")
-    os.system(f'tensorflowjs_converter --input_format=keras {args.out_model} {args.tfjs_dir}')
-    print(f"Model TFjs disimpan ke {args.tfjs_dir}")
-
-    # 8. Simpan labels.json
+    # 7. Simpan labels.json
     with open(args.out_labels, 'w') as f:
         json.dump(idx_to_label, f, indent=2)
-    # Salin juga ke folder web
-    with open(os.path.join(args.tfjs_dir, 'labels.json'), 'w') as f:
-        json.dump(idx_to_label, f, indent=2)
-    print(f"Labels disimpan ke {args.out_labels} dan {args.tfjs_dir}/labels.json")
+    print(f"Labels disimpan ke {args.out_labels}")
+
+    print("\nUntuk konversi ke TFjs, salin model.h5 ke folder converter dan jalankan:")
+    print("  cp model.h5 ../converter/")
+    print("  cd ../converter && source venv/Scripts/activate && python convert_model.py")
 
 
 if __name__ == "__main__":
