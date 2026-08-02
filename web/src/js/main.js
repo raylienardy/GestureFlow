@@ -19,23 +19,11 @@ let detector, classifier, stream;
 let showOverlay = true;
 let lastLabel = "";
 
-// Untuk deteksi stabilitas
+// === Parameter Stabilitas Baru ===
 let lastFeature = null;
 let stableCount = 0;
-const STABLE_THRESHOLD = 0.01;
-const REQUIRED_STABLE_FRAMES = 10;
-
-document.getElementById("btn-export").addEventListener("click", () => {
-  if (!lastFeature) {
-    alert("Tangan belum terdeteksi. Tunjukkan tangan dulu.");
-    return;
-  }
-  const json = JSON.stringify(lastFeature);
-  console.log("EXPORTED_FRAME:", json);
-  alert(
-    "Array diekspor ke Console (F12). Salin nilai 5 pertama dan bandingkan dengan Python.",
-  );
-});
+const STABLE_THRESHOLD = 0.005; // rata-rata perubahan per elemen (sangat kecil)
+const REQUIRED_STABLE_FRAMES = 8; // cukup 8 frame untuk mulai mengisi buffer
 
 async function init() {
   try {
@@ -80,7 +68,6 @@ function onFrame(results) {
   }
 
   if (!handDetected) {
-    // Reset buffer jika tangan hilang
     classifier.buffer = [];
     stableCount = 0;
     lastFeature = null;
@@ -93,13 +80,14 @@ function onFrame(results) {
     results.multiHandedness,
   );
 
-  // Cek stabilitas: bandingkan dengan frame sebelumnya
+  // Cek stabilitas: rata‑rata perbedaan absolut per elemen
   if (lastFeature) {
-    let diff = 0;
+    let sumDiff = 0;
     for (let i = 0; i < feature.length; i++) {
-      diff += Math.abs(feature[i] - lastFeature[i]);
+      sumDiff += Math.abs(feature[i] - lastFeature[i]);
     }
-    if (diff < STABLE_THRESHOLD) {
+    const meanDiff = sumDiff / feature.length; // 126 elemen
+    if (meanDiff < STABLE_THRESHOLD) {
       stableCount++;
     } else {
       stableCount = 0;
@@ -107,13 +95,12 @@ function onFrame(results) {
   }
   lastFeature = feature;
 
-  // Hanya tambahkan ke buffer jika pose stabil selama beberapa frame
+  // Hanya tambahkan ke buffer jika pose stabil
   if (stableCount >= REQUIRED_STABLE_FRAMES) {
     classifier.addFrame(feature);
     statusSpan.textContent = `Mengumpulkan... (${classifier.buffer.length}/30)`;
   } else {
-    // Reset buffer jika belum stabil agar tidak tercampur gerakan transisi
-    classifier.buffer = [];
+    classifier.buffer = []; // reset buffer jika belum stabil
     statusSpan.textContent = "Tunggu stabil...";
   }
 

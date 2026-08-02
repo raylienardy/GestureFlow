@@ -96,14 +96,20 @@ def init_camera():
 
 
 def process_frame(frame, hands):
+    """Mirror, deteksi tangan, gambar landmark, kembalikan display & array."""
     frame = cv2.flip(frame, 1)
     display = frame.copy()
     img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(img_rgb)
     hand_detected = results.multi_hand_landmarks is not None
+
     if hand_detected:
         for hand_lm in results.multi_hand_landmarks:
-            MP_DRAWING.draw_landmarks(...)
+            MP_DRAWING.draw_landmarks(
+                display, hand_lm, MP_HANDS.HAND_CONNECTIONS,
+                MP_STYLES.get_default_hand_landmarks_style(),
+                MP_STYLES.get_default_hand_connections_style()
+            )
     arr = landmarks_to_array(results.multi_hand_landmarks, results.multi_handedness)
     return display, hand_detected, arr
 
