@@ -3,6 +3,11 @@
 GestureFlow Trainer - Rekam gestur dinamis untuk dilatih.
 Usage: python train.py <nama_gerakan> <jumlah_rekaman>
 Contoh: python train.py halo 30
+
+Fitur:
+  R  -> Rekam satu sampel (manual)
+  F  -> Auto Record ON/OFF (rekam terus menerus)
+  Q  -> Keluar
 """
 
 import sys
@@ -35,6 +40,19 @@ def landmarks_to_array(multi_hand_landmarks):
         arr[start:start + PER_HAND] = np.array(pts, dtype=np.float32)
     return arr
 
+
+def draw_text_with_background(img, text, position, font_scale=0.7,
+                              fg_color=(255, 255, 255), bg_color=(0, 0, 0),
+                              thickness=2):
+    """Gambar teks dengan background hitam agar mudah dibaca di segala kondisi."""
+    (w, h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+    x, y = position
+    # Background rectangle
+    cv2.rectangle(img, (x, y - h - baseline), (x + w, y + baseline), bg_color, -1)
+    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                font_scale, fg_color, thickness, cv2.LINE_AA)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("label", help="Nama gerakan (misal: halo)")
@@ -47,8 +65,10 @@ def main():
 
     print(f"=== GestureFlow Trainer ===")
     print(f"Label: {label} | Target: {target} rekaman")
-    print("Instruksi: Tekan 'R' untuk mulai rekam, 'Q' untuk keluar.")
-    print("Setelah countdown 3-2-1, lakukan gerakan selama 2 detik.")
+    print("Instruksi:")
+    print("  R  -> Rekam manual satu sampel")
+    print("  F  -> Auto Record ON/OFF (rekam terus menerus)")
+    print("  Q  -> Keluar")
     print("=================================")
 
     cap = cv2.VideoCapture(0)
@@ -64,12 +84,13 @@ def main():
     )
 
     recorded = 0
-    state = "waiting"
+    state = "waiting"        # waiting / countdown / recording
     state_start = 0
     countdown_seconds = 3
     record_duration = 2.0
     frames_buffer = []
-    saved = False  # flag untuk mencegah penyimpanan ganda
+    saved = False
+    auto_mode = False        # Mode auto record
 
     while True:
         ret, frame = cap.read()
@@ -78,10 +99,12 @@ def main():
         frame = cv2.flip(frame, 1)
         display = frame.copy()
 
+        # Deteksi tangan
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hands.process(img_rgb)
         hand_detected = results.multi_hand_landmarks is not None
 
+        # Gambar landmark
         if hand_detected:
             for hand_lm in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(
@@ -90,20 +113,42 @@ def main():
                     mp_styles.get_default_hand_connections_style()
                 )
 
-        cv2.putText(display, f"Label: {label}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
-        cv2.putText(display, f"Recorded: {recorded}/{target}", (10, 65),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
+        # Info tampilan
+        draw_text_with_background(display, f"Label: {label}", (10, 30))
+        draw_text_with_background(display, f"Recorded: {recorded}/{target}", (10, 65))
+
+        # Mode auto indicator
+        mode_color = (0, 255, 0) if auto_mode else (0, 0, 255)
+        draw_text_with_background(display, f"Auto: {'ON' if auto_mode else 'OFF'}",
+                                  (display.shape[1] - 200, 30), fg_color=mode_color)
 
         key = cv2.waitKey(1) & 0xFF
 
+        # Toggle auto mode
+        if key == ord('f'):
+            auto_mode = not auto_mode
+            if auto_mode:
+                print("  Auto Record: ON (akan merekam otomatis)")
+                # Jika sedang waiting, langsung mulai countdown
+                if state == "waiting":
+                    state = "countdown"
+                    state_start = time.time()
+                    saved = False
+                    print(f"  [{recorded+1}/{target}] Auto memulai countdown...")
+            else:
+                print("  Auto Record: OFF")
+
+        # Quit
+        if key == ord('q'):
+            print("Dihentikan oleh pengguna.")
+            break
+
         if state == "waiting":
-            cv2.putText(display, "Tekan 'R' untuk rekam", (10, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
+            draw_text_with_background(display, "Tekan 'R' (manual) atau 'F' (auto)", (10, 100))
             if key == ord('r'):
                 state = "countdown"
                 state_start = time.time()
-                saved = False  # reset flag
+                saved = False
                 print(f"  [{recorded+1}/{target}] Memulai countdown...")
 
         elif state == "countdown":
@@ -115,19 +160,19 @@ def main():
                 frames_buffer = []
                 print("  GO! Rekam selama 2 detik...")
             else:
-                cv2.putText(display, f"Countdown: {remaining}", (10, 100),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+                draw_text_with_background(display, f"Countdown: {remaining}", (10, 100),
+                                          fg_color=(0, 0, 255))
 
         elif state == "recording":
             elapsed = time.time() - state_start
             landmark_array = landmarks_to_array(results.multi_hand_landmarks)
             frames_buffer.append(landmark_array)
 
-            cv2.putText(display, f"Merekam... {elapsed:.1f}s / {record_duration}s",
-                        (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+            draw_text_with_background(display, f"Merekam... {elapsed:.1f}s / {record_duration}s",
+                                      (10, 100), fg_color=(0, 255, 255))
 
             if elapsed >= record_duration and not saved:
-                saved = True  # hanya sekali simpan
+                saved = True
                 seq_len = 30
                 if len(frames_buffer) > 0:
                     all_frames = np.array(frames_buffer)
@@ -140,15 +185,21 @@ def main():
                 np.savez_compressed(fname, sequence=sampled, label=label)
                 recorded += 1
                 print(f"  Tersimpan: {fname} ({recorded}/{target})")
-                state = "waiting"
+
                 if recorded >= target:
                     print(f"=== Selesai. {recorded} sampel tersimpan ===")
                     break
 
+                if auto_mode:
+                    # Langsung mulai countdown lagi
+                    state = "countdown"
+                    state_start = time.time()
+                    saved = False
+                    print(f"  [{recorded+1}/{target}] Auto memulai countdown...")
+                else:
+                    state = "waiting"
+
         cv2.imshow("GestureFlow Trainer", display)
-        if key == ord('q'):
-            print("Dihentikan oleh pengguna.")
-            break
 
     cap.release()
     cv2.destroyAllWindows()

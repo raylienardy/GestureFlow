@@ -11,6 +11,7 @@ trainer/*.keras
 *.pyc
 *.pyo
 *.egg-info/
+trainer/IMAGES
 
 # ===================
 # Web
