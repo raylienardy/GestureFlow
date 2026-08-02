@@ -6,8 +6,8 @@ Contoh: python train.py halo 30
 
 Fitur:
   R  -> Rekam satu sampel (manual)
-  F  -> Auto Record ON/OFF (rekam terus menerus)
-  Q  -> Keluar
+  F  -> Auto Record ON/OFF (rekam terus menerus tanpa countdown setelah pertama)
+  Q  -> Keluar (hapus semua rekaman yang belum selesai jika auto)
 """
 
 import sys
@@ -23,7 +23,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_styles = mp.solutions.drawing_styles
 
 MAX_HANDS = 2
-PER_HAND = 21 * 3          # x, y, z per titik
+PER_HAND = 21 * 3
 FEAT_DIM = PER_HAND * MAX_HANDS  # 126
 
 def landmarks_to_array(multi_hand_landmarks):
@@ -47,7 +47,6 @@ def draw_text_with_background(img, text, position, font_scale=0.7,
     """Gambar teks dengan background hitam agar mudah dibaca di segala kondisi."""
     (w, h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
     x, y = position
-    # Background rectangle
     cv2.rectangle(img, (x, y - h - baseline), (x + w, y + baseline), bg_color, -1)
     cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
                 font_scale, fg_color, thickness, cv2.LINE_AA)
@@ -68,7 +67,7 @@ def main():
     print("Instruksi:")
     print("  R  -> Rekam manual satu sampel")
     print("  F  -> Auto Record ON/OFF (rekam terus menerus)")
-    print("  Q  -> Keluar")
+    print("  Q  -> Keluar (hapus semua file yang direkam di sesi ini)")
     print("=================================")
 
     cap = cv2.VideoCapture(0)
@@ -84,13 +83,14 @@ def main():
     )
 
     recorded = 0
-    state = "waiting"        # waiting / countdown / recording
+    state = "waiting"
     state_start = 0
     countdown_seconds = 3
     record_duration = 2.0
     frames_buffer = []
     saved = False
-    auto_mode = False        # Mode auto record
+    auto_mode = False
+    session_files = []          # lacak file yang dibuat di sesi auto
 
     while True:
         ret, frame = cap.read()
@@ -117,7 +117,6 @@ def main():
         draw_text_with_background(display, f"Label: {label}", (10, 30))
         draw_text_with_background(display, f"Recorded: {recorded}/{target}", (10, 65))
 
-        # Mode auto indicator
         mode_color = (0, 255, 0) if auto_mode else (0, 0, 255)
         draw_text_with_background(display, f"Auto: {'ON' if auto_mode else 'OFF'}",
                                   (display.shape[1] - 200, 30), fg_color=mode_color)
@@ -128,19 +127,26 @@ def main():
         if key == ord('f'):
             auto_mode = not auto_mode
             if auto_mode:
-                print("  Auto Record: ON (akan merekam otomatis)")
-                # Jika sedang waiting, langsung mulai countdown
+                print("  Auto Record: ON (rekam otomatis)")
+                # Hanya hitung mundur saat pertama kali
                 if state == "waiting":
                     state = "countdown"
                     state_start = time.time()
                     saved = False
+                    session_files = []
                     print(f"  [{recorded+1}/{target}] Auto memulai countdown...")
             else:
                 print("  Auto Record: OFF")
 
-        # Quit
+        # Keluar & hapus file yang dibuat di sesi ini
         if key == ord('q'):
             print("Dihentikan oleh pengguna.")
+            if session_files:
+                print("  Menghapus file yang baru direkam...")
+                for f in session_files:
+                    if os.path.exists(f):
+                        os.remove(f)
+                        print(f"    Dihapus: {f}")
             break
 
         if state == "waiting":
@@ -149,6 +155,7 @@ def main():
                 state = "countdown"
                 state_start = time.time()
                 saved = False
+                session_files = []   # manual tidak lacak, kecuali mau
                 print(f"  [{recorded+1}/{target}] Memulai countdown...")
 
         elif state == "countdown":
@@ -183,6 +190,7 @@ def main():
 
                 fname = f"data/{label}_{recorded+1}_{int(time.time())}.npz"
                 np.savez_compressed(fname, sequence=sampled, label=label)
+                session_files.append(fname)
                 recorded += 1
                 print(f"  Tersimpan: {fname} ({recorded}/{target})")
 
@@ -191,11 +199,12 @@ def main():
                     break
 
                 if auto_mode:
-                    # Langsung mulai countdown lagi
-                    state = "countdown"
+                    # Langsung rekam ulang tanpa countdown
+                    state = "recording"
                     state_start = time.time()
                     saved = False
-                    print(f"  [{recorded+1}/{target}] Auto memulai countdown...")
+                    frames_buffer = []
+                    print(f"  [{recorded+1}/{target}] Auto melanjutkan rekam...")
                 else:
                     state = "waiting"
 
