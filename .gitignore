@@ -46,3 +46,9 @@ Desktop.ini
 # convert
 # ===================
 converter/venv/
+
+graphify-out/
+
+uji/
+
+.playwright-cli/ 
