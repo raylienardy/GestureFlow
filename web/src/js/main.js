@@ -157,4 +157,16 @@ canvas.addEventListener("dblclick", () => {
   canvas.style.opacity = showOverlay ? "1" : "0.2";
 });
 
+document.getElementById("btn-export").addEventListener("click", () => {
+  if (!lastFeature) {
+    alert("Tangan belum terdeteksi. Tunjukkan tangan dulu.");
+    return;
+  }
+  const json = JSON.stringify(lastFeature);
+  console.log("EXPORTED_FRAME:", json);
+  alert(
+    "Array diekspor ke Console (F12). Salin nilai 5 pertama dan bandingkan dengan Python.",
+  );
+});
+
 init();
