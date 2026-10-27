@@ -3,6 +3,19 @@
 Aplikasi web pengenal gerakan tangan dinamis berbasis AI.  
 Rekam gestur kustom → latih model LSTM → deteksi real-time di browser (tanpa backend).
 
+## Cakupan & Batasan
+
+Aplikasi ini mengenali **27 kelas gestur**:
+
+- **A–Z** — alfabet isyarat tangan. Bentuk huruf mengikuti dataset referensi (lihat `trainer/IMAGES/BISINDO_v2/`), bukan klaim validasi terhadap sistem SIBI atau BISINDO resmi.
+- **halo** — gestur sapaan, ditambahkan sebagai label kustom.
+
+**Bukan penerjemah bahasa isyarat penuh.** Ini classifier terbatas untuk 27 kelas di atas. Gestur di luar daftar tersebut tidak memiliki prediksi yang bermakna — model akan tetap mengeluarkan output (karena softmax), tetapi hasilnya tidak dapat diandalkan.
+
+Dataset gambar referensi tersedia di `trainer/IMAGES/BISINDO_v2/` dengan subfolder A–Z. Nama folder bersifat historis dan **bukan** klaim bahwa dataset ini mengikuti standar BISINDO resmi. Provenance dan lisensi dataset tidak tercantum di repository.
+
+Untuk menambah gestur baru, ikuti petunjuk di bagian [Merekam Gestur Baru](#merekam-gestur-baru) di bawah.
+
 ## Struktur Proyek
 
 ```

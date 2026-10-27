@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Konversi gambar gestur BISINDO ke dataset .npz.
+Konversi gambar gestur tangan (folder referensi IMAGES/BISINDO_v2/) ke dataset .npz.
 Usage:
   python train_image.py <label> <folder_gambar>
 Contoh:
